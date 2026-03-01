@@ -1,6 +1,6 @@
 data:
-  resting: /Users/buraa/Repo/TaskEEG-Dx/data/raw/ds004504
-  photic: /Users/buraa/Repo/TaskEEG-Dx/data/raw/ds006036
+  resting: ./data/raw/ds004504
+  photic: ./data/raw/ds006036
 
 experiment:
   binary_classification: true
