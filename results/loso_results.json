@@ -1,0 +1,66 @@
+{
+    "subject_level_accuracy": 0.8,
+    "paper_target_accuracy": 0.8615,
+    "folds": [
+        {
+            "subject": "sub-037",
+            "y_true": 0,
+            "y_pred": 1,
+            "trial_accuracy": 0.17419354838709677
+        },
+        {
+            "subject": "sub-038",
+            "y_true": 0,
+            "y_pred": 0,
+            "trial_accuracy": 0.7471910112359551
+        },
+        {
+            "subject": "sub-039",
+            "y_true": 0,
+            "y_pred": 0,
+            "trial_accuracy": 0.788235294117647
+        },
+        {
+            "subject": "sub-040",
+            "y_true": 0,
+            "y_pred": 0,
+            "trial_accuracy": 0.8860103626943006
+        },
+        {
+            "subject": "sub-041",
+            "y_true": 0,
+            "y_pred": 0,
+            "trial_accuracy": 1.0
+        },
+        {
+            "subject": "sub-001",
+            "y_true": 1,
+            "y_pred": 1,
+            "trial_accuracy": 0.8151260504201681
+        },
+        {
+            "subject": "sub-002",
+            "y_true": 1,
+            "y_pred": 0,
+            "trial_accuracy": 0.4430379746835443
+        },
+        {
+            "subject": "sub-003",
+            "y_true": 1,
+            "y_pred": 1,
+            "trial_accuracy": 0.819672131147541
+        },
+        {
+            "subject": "sub-004",
+            "y_true": 1,
+            "y_pred": 1,
+            "trial_accuracy": 0.5815602836879432
+        },
+        {
+            "subject": "sub-005",
+            "y_true": 1,
+            "y_pred": 1,
+            "trial_accuracy": 0.76875
+        }
+    ]
+}

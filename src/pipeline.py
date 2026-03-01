@@ -47,17 +47,41 @@ class TaskEEGPipeline:
             print("No data found. Check your config.yml paths.")
             return
 
-        print(f"Datasets: {len(controls)} Control, {len(ad)} AD, {len(ftd)} FTD subjects.")
-        self.subjects = {"Control": controls, "AD": ad, "FTD": ftd}
+        n_processed = self.df[self.df['is_derivative'] == True].shape[0] if 'is_derivative' in self.df.columns else 0
+        print(f"Discovered {len(self.df)} EEG records ({n_processed} from derivatives).")
+
+
+        # Filtering for AD vs CN as per Section 5.2 of the paper
+        print(f"Total discovered subjects: {len(controls)} Control, {len(ad)} AD, {len(ftd)} FTD.")
         
-        self.splits = get_stratified_splits(
-            controls, ad, ftd, 
-            n_splits=self.n_splits, 
-            seed=self.split_seed,
-            binary_mode=self.binary_mode
-        )
-        if self.splits:
-            print(f"Generated {len(self.splits)} stratified cross-validation splits.")
+        # Apply subject limit if specified
+        exp_config = self.config.get('experiment', {})
+        max_subjects = exp_config.get('max_subjects')
+        if max_subjects:
+            half = max_subjects // 2
+            controls = controls[:half]
+            ad = ad[:max_subjects - half]
+            print(f"Limiting to {len(controls)} Control and {len(ad)} AD subjects (Total: {len(controls) + len(ad)}).")
+        else:
+            print("Replicating Section 5.2: Focusing on AD vs CN classification (total 65 subjects).")
+
+        self.subjects = {"Control": controls, "AD": ad}
+        
+        # LOSO Cross-validation subjects
+        loso_subjects = controls + ad
+        loso_labels = [0] * len(controls) + [1] * len(ad)
+        
+        self.splits = []
+        for i in range(len(loso_subjects)):
+            train_subs = loso_subjects[:i] + loso_subjects[i+1:]
+            test_sub = [loso_subjects[i]]
+            self.splits.append({
+                "train_subjects": train_subs,
+                "test_subjects": test_sub,
+                "val_idx": i # Index of the subject left out
+            })
+        
+        print(f"Generated {len(self.splits)} LOSO cross-validation folds.")
 
     def run(self):
         """Execute the pipeline steps."""
@@ -71,28 +95,25 @@ class TaskEEGPipeline:
             print("Detach ROCKET is not available. Aborting.")
             return
 
-        print("\nStarting Cross-Validation Loop...")
-        all_accuracies = []
+        print("\nStarting LOSO Cross-Validation Loop...")
+        subject_predictions = []
+        subject_true_labels = []
         
         results = []
 
         for i, split in enumerate(self.splits):
-            print(f"\n--- Fold {i+1}/{len(self.splits)} ---")
+            print(f"\n--- Fold {i+1}/{len(self.splits)} (Testing subject: {split['test_subjects'][0]}) ---")
             
             # Load and format data for this split
-            print("Loading and formatting training data...")
-            X_train, y_train = load_and_format_data(self.df, split['train_subjects'])
-            
-            print("Loading and formatting test data...")
-            X_test, y_test = load_and_format_data(self.df, split['test_subjects'])
+            max_trials = self.config.get('experiment', {}).get('max_trials_per_subject')
+            X_train, y_train, _ = load_and_format_data(self.df, split['train_subjects'], max_trials_per_subject=max_trials)
+            X_test, y_test, _ = load_and_format_data(self.df, split['test_subjects'], max_trials_per_subject=max_trials)
             
             if X_train.size == 0 or X_test.size == 0:
                 print(f"Skip Fold {i+1}: Insufficient data.")
                 continue
 
-            # X should be (n_instances, n_channels, n_timepoints)
-            print(f"Train Shape: {X_train.shape}, Labels: {y_train.shape}")
-            print(f"Test Shape: {X_test.shape}, Labels: {y_test.shape}")
+            print(f"Train Trials: {X_train.shape[0]}, Test Trials: {X_test.shape[0]}")
 
             # Initialize and train DetachEnsemble
             model_params = self.config.get('model', {}).get('params', {})
@@ -101,41 +122,44 @@ class TaskEEGPipeline:
                 num_models=model_params.get('num_models', 10)
             )
             
-            print("Training DetachEnsemble...")
             model.fit(X_train, y_train)
             
-            print("Predicting...")
-            y_pred = model.predict(X_test)
+            # Prediction on trials
+            y_pred_trials = model.predict(X_test)
             
-            acc = accuracy_score(y_test, y_pred)
-            all_accuracies.append(acc)
+            # Subject-level prediction via Majority Voting
+            # (Since there is only one subject in X_test, we take the mode of y_pred_trials)
+            y_pred_subject = 1 if np.mean(y_pred_trials) >= 0.5 else 0
+            y_true_subject = y_test[0] # All trials for this subject have same label
             
-            # Save detailed results for this fold
+            subject_predictions.append(y_pred_subject)
+            subject_true_labels.append(y_true_subject)
+            
             results.append({
-                "fold": i + 1,
-                "y_true": y_test.tolist(),
-                "y_pred": y_pred.tolist(),
-                "test_subjects": split['test_subjects'],
-                "accuracy": acc
+                "subject": split['test_subjects'][0],
+                "y_true": int(y_true_subject),
+                "y_pred": int(y_pred_subject),
+                "trial_accuracy": float(accuracy_score(y_test, y_pred_trials))
             })
 
-            print(f"Fold {i+1} Accuracy: {acc:.4f}")
-            print(classification_report(y_test, y_pred, target_names=['Control', 'Dementia']))
+            print(f"Subject Prediction: {y_pred_subject} (True: {y_true_subject})")
 
-        if all_accuracies:
-            avg_acc = np.mean(all_accuracies)
-            std_acc = np.std(all_accuracies)
-            print(f"\nAverage Cross-Validation Accuracy: {avg_acc:.4f} (+/- {std_acc:.4f})")
+        if subject_predictions:
+            final_acc = accuracy_score(subject_true_labels, subject_predictions)
+            print(f"\nFinal Subject-Level Accuracy (LOSO): {final_acc*100:.2f}%")
+            print("\nClassification Report:")
+            print(classification_report(subject_true_labels, subject_predictions, target_names=['Control', 'AD']))
             
             # Save results to file
             os.makedirs("results", exist_ok=True)
-            with open("results/cv_results.json", "w") as f:
+            with open("results/loso_results.json", "w") as f:
                 json.dump({
-                    "average_accuracy": avg_acc,
-                    "std_accuracy": std_acc,
+                    "subject_level_accuracy": final_acc,
+                    "paper_target_accuracy": 0.8615,
                     "folds": results
                 }, f, indent=4)
-            print("\nDetailed results saved to results/cv_results.json")
+            print("\nDetailed results saved to results/loso_results.json")
+
 
 if __name__ == "__main__":
     pipeline = TaskEEGPipeline()

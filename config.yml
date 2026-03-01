@@ -6,6 +6,7 @@ experiment:
   binary_classification: true
   n_splits: 5
   seed: 42
+  max_subjects: 10
 
 model:
   type: "detach_rocket"

@@ -40,11 +40,12 @@ def load_bids_dataset(dataset_path: str) -> Tuple[pd.DataFrame, Tuple[List[str],
         return pd.DataFrame(), ([], [], [])
 
     eeg_suffixes = {".set", ".edf", ".bdf", ".eeg", ".vhdr", ".fif"}
-    # Only include files that are not in derivatives (standard BIDS discovery)
+    # Include files in both root and derivatives for discovery
     eeg_files = [
         f for f in dataset_dir.rglob("*_eeg.*")
-        if f.is_file() and f.suffix.lower() in eeg_suffixes and "derivatives" not in f.parts
+        if f.is_file() and f.suffix.lower() in eeg_suffixes
     ]
+
 
     records = []
     for eeg_file in sorted(eeg_files):
@@ -72,8 +73,16 @@ def load_bids_dataset(dataset_path: str) -> Tuple[pd.DataFrame, Tuple[List[str],
         })
 
     df = pd.DataFrame(records)
+    
+    # Deduplicate: if same subject and task have multiple files (e.g. raw and derivatives),
+    # prioritize the one in derivatives.
+    if not df.empty:
+        df['is_derivative'] = df['eeg_file'].apply(lambda x: 'derivatives' in x)
+        df = df.sort_values(['participant_id', 'task', 'is_derivative'], ascending=[True, True, False])
+        df = df.drop_duplicates(subset=['participant_id', 'task'], keep='first')
 
     # Merge participant metadata from participants.tsv
+
     participants_tsv = dataset_dir / "participants.tsv"
     if participants_tsv.exists() and not df.empty:
         participants_df = pd.read_csv(participants_tsv, sep="\t", encoding="utf-8-sig")
