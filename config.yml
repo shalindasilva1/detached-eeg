@@ -1,0 +1,14 @@
+data:
+  resting: /Users/buraa/Repo/TaskEEG-Dx/data/raw/ds004504
+  photic: /Users/buraa/Repo/TaskEEG-Dx/data/raw/ds006036
+
+experiment:
+  binary_classification: true
+  n_splits: 5
+  seed: 42
+
+model:
+  type: "detach_rocket"
+  params:
+    num_kernels: 1000
+    num_models: 5
