@@ -6,10 +6,9 @@ experiment:
   binary_classification: true
   n_splits: 5
   seed: 42
-  max_subjects: 10
 
 model:
   type: "detach_rocket"
   params:
-    num_kernels: 1000
-    num_models: 5
+    num_kernels: 10000
+    num_models: 10
