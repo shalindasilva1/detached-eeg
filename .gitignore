@@ -3,9 +3,6 @@ data/.DS_Store
 data/raw/
 data/raw/ds006036
 data/raw/ds004504
+.conda
 src/__pycache__
-src/utl/__pycache__/__init__.cpython-313.pyc
-src/utl/__pycache__/bids.cpython-313.pyc
-src/utl/__pycache__/config.cpython-313.pyc
-src/utl/__pycache__/eeg.cpython-313.pyc
-src/utl/__pycache__/splits.cpython-313.pyc
+src/utl/__pycache__/
