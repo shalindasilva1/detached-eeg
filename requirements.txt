@@ -9,4 +9,5 @@ eegdash
 pyts
 torch
 sktime==0.30.0
+seaborn
 git+https://github.com/gon-uri/detach_rocket
