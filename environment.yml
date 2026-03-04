@@ -1,9 +1,9 @@
-name: TaskEEG-Dx
+name: detached-eeg
 channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.13
+  - python=3.12
   - pip
   - pip:
       - mne
@@ -14,3 +14,7 @@ dependencies:
       - scipy
       - matplotlib
       - eegdash
+      - pyts
+      - torch
+      - sktime==0.30.0
+      - git+https://github.com/gon-uri/detach_rocket

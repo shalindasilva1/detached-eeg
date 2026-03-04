@@ -10,5 +10,5 @@ experiment:
 model:
   type: "detach_rocket"
   params:
-    num_kernels: 1000
-    num_models: 5
+    num_kernels: 10000
+    num_models: 10

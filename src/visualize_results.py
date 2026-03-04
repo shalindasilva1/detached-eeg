@@ -1,97 +1,88 @@
 import json
-import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.metrics import confusion_matrix, classification_report, precision_recall_fscore_support
+from sklearn.metrics import confusion_matrix
+import pandas as pd
 import os
 
-def load_results(results_path="results/cv_results.json"):
-    with open(results_path, "r") as f:
+def load_results(json_path="results/loso_results.json"):
+    if not os.path.exists(json_path):
+        print(f"Error: Could not find {json_path}. Please run the pipeline first.")
+        return None
+    with open(json_path, 'r') as f:
         return json.load(f)
 
-def plot_confusion_matrix(all_y_true, all_y_pred, output_path="results/confusion_matrix.png"):
-    cm = confusion_matrix(all_y_true, all_y_pred)
-    plt.figure(figsize=(8, 6))
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
-                xticklabels=['Control', 'Dementia'], 
-                yticklabels=['Control', 'Dementia'])
-    plt.xlabel('Predicted')
-    plt.ylabel('Actual')
-    plt.title('Aggregated Confusion Matrix (All Folds)')
-    plt.savefig(output_path)
-    plt.close()
-    print(f"Confusion matrix saved to {output_path}")
-
-def plot_metrics_per_fold(folds, output_path="results/metrics_per_fold.png"):
-    metrics_data = []
+def plot_confusion_matrix(results, ax=None):
+    y_true = [fold['y_true'] for fold in results['folds']]
+    y_pred = [fold['y_pred'] for fold in results['folds']]
     
-    for fold in folds:
-        y_true = fold['y_true']
-        y_pred = fold['y_pred']
-        
-        precision, recall, f1, _ = precision_recall_fscore_support(y_true, y_pred, average=None, labels=[0, 1])
-        
-        metrics_data.append({
-            "Fold": fold['fold'],
-            "Metric": "Precision (Control)",
-            "Value": precision[0]
-        })
-        metrics_data.append({
-            "Fold": fold['fold'],
-            "Metric": "Recall (Control)",
-            "Value": recall[0]
-        })
-        metrics_data.append({
-            "Fold": fold['fold'],
-            "Metric": "Precision (Dementia)",
-            "Value": precision[1]
-        })
-        metrics_data.append({
-            "Fold": fold['fold'],
-            "Metric": "Recall (Dementia)",
-            "Value": recall[1]
-        })
-        metrics_data.append({
-            "Fold": fold['fold'],
-            "Metric": "Accuracy",
-            "Value": fold['accuracy']
-        })
-
-    df_metrics = pd.DataFrame(metrics_data)
+    cm = confusion_matrix(y_true, y_pred)
+    df_cm = pd.DataFrame(cm, index=['Control', 'AD'], columns=['Control', 'AD'])
     
-    plt.figure(figsize=(12, 7))
-    sns.barplot(data=df_metrics, x="Fold", y="Value", hue="Metric")
-    plt.ylim(0, 1.1)
-    plt.title('Performance Metrics per Fold')
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(6, 5))
+        
+    sns.heatmap(df_cm, annot=True, fmt='g', cmap='Blues', ax=ax, annot_kws={"size": 16})
+    ax.set_title('Subject-Level Confusion Matrix')
+    ax.set_ylabel('True Label')
+    ax.set_xlabel('Predicted Label')
+    
+    return ax.figure
+
+def plot_trial_accuracy(results, ax=None):
+    df = pd.DataFrame(results['folds'])
+    
+    # Sort by true label so Controls and ADs are grouped
+    df.sort_values(by=['y_true', 'trial_accuracy'], ascending=[True, False], inplace=True)
+    
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(10, 5))
+        
+    colors = ['skyblue' if y == 0 else 'salmon' for y in df['y_true']]
+    bars = ax.bar(df['subject'], df['trial_accuracy'] * 100, color=colors)
+    
+    ax.axhline(50, color='red', linestyle='--', alpha=0.5, label='Random Chance')
+    ax.set_title('Trial-Level Accuracy per Subject')
+    ax.set_ylabel('Accuracy (%)')
+    ax.set_xticks(range(len(df['subject'])))
+    ax.set_xticklabels(df['subject'], rotation=45, ha='right')
+    
+    # Custom legend
+    from matplotlib.patches import Patch
+    legend_elements = [Patch(facecolor='skyblue', label='Control'),
+                       Patch(facecolor='salmon', label='AD')]
+    ax.legend(handles=legend_elements)
+    
     plt.tight_layout()
-    plt.savefig(output_path)
-    plt.close()
-    print(f"Metrics per fold plot saved to {output_path}")
+    return ax.figure
 
 def main():
-    if not os.path.exists("results/cv_results.json"):
-        print("Error: results/cv_results.json not found. Run the pipeline first.")
+    results = load_results()
+    if not results:
         return
-
-    data = load_results()
-    folds = data['folds']
+        
+    os.makedirs('results/figures', exist_ok=True)
     
-    all_y_true = []
-    all_y_pred = []
+    print(f"Loaded results! Final Subject-Level Accuracy: {results['subject_level_accuracy']*100:.2f}%")
+    print(f"Target Accuracy (Original Paper): {results.get('paper_target_accuracy', 0.8615)*100:.2f}%\n")
     
-    for fold in folds:
-        all_y_true.extend(fold['y_true'])
-        all_y_pred.extend(fold['y_pred'])
+    # 1. Plot Confusion Matrix
+    print("Generating Confusion Matrix...")
+    fig_cm = plot_confusion_matrix(results)
+    cm_path = "results/figures/confusion_matrix.png"
+    fig_cm.savefig(cm_path, dpi=300, bbox_inches='tight')
+    plt.close(fig_cm)
+    print(f"Saved to {cm_path}")
     
-    os.makedirs("results", exist_ok=True)
+    # 2. Plot Trial Accuracy
+    print("Generating Trial Accuracy Chart...")
+    fig_acc = plot_trial_accuracy(results)
+    acc_path = "results/figures/trial_accuracy_per_subject.png"
+    fig_acc.savefig(acc_path, dpi=300, bbox_inches='tight')
+    plt.close(fig_acc)
+    print(f"Saved to {acc_path}")
     
-    plot_confusion_matrix(all_y_true, all_y_pred)
-    plot_metrics_per_fold(folds)
-    
-    print("\nGlobal Classification Report:")
-    print(classification_report(all_y_true, all_y_pred, target_names=['Control', 'Dementia']))
+    print("\nVisualization complete!")
 
 if __name__ == "__main__":
     main()
