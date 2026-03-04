@@ -37,6 +37,27 @@ class TaskEEGPipeline:
         self.df: Any = None
         self.subjects: Dict[str, List[str]] | None = None
         self.splits: List[Dict[str, Any]] | None = None
+        
+        # Indicate CUDA status at the start
+        self._check_cuda()
+
+    def _check_cuda(self):
+        """Check and print CUDA availability."""
+        try:
+            import torch
+            cuda_available = torch.cuda.is_available()
+            print(f"\n" + "="*30)
+            print(f"CUDA STATUS CHECK")
+            print(f"="*30)
+            print(f"CUDA Available: {'YES' if cuda_available else 'NO'}")
+            if cuda_available:
+                print(f"Device Name: {torch.cuda.get_device_name(0)}")
+                print(f"VRAM Total: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.2f} GB")
+            print(f"="*30 + "\n")
+        except ImportError:
+            print("\n[!] PyTorch not installed. Cannot check CUDA status.\n")
+        except Exception as e:
+            print(f"\n[!] Error checking CUDA: {e}\n")
 
     def initialize(self):
         """Discover files and prepare splits."""
@@ -84,7 +105,7 @@ class TaskEEGPipeline:
         print(f"Generated {len(self.splits)} LOSO cross-validation folds.")
 
     def run(self):
-        """Execute the pipeline steps."""
+        """Execute the pipeline steps with GPU acceleration and pre-transformation."""
         if self.df is None:
             self.initialize()
             
@@ -95,48 +116,107 @@ class TaskEEGPipeline:
             print("Detach ROCKET is not available. Aborting.")
             return
 
-        print("\nStarting LOSO Cross-Validation Loop...")
+        # 1. Load ALL data for all relevant subjects into RAM once. 
+        # (CN/AD subjects were filtered in initialize)
+        all_subjects = self.subjects["Control"] + self.subjects["AD"]
+        print(f"\nLoading and formatting data for all {len(all_subjects)} subjects into RAM...")
+        max_trials = self.config.get('experiment', {}).get('max_trials_per_subject')
+        X_all, y_all, s_indices = load_and_format_data(self.df, all_subjects, max_trials_per_subject=max_trials)
+        
+        if X_all.size == 0:
+            print("No data could be loaded. Aborting.")
+            return
+            
+        print(f"Total trials loaded: {X_all.shape[0]} across {len(all_subjects)} subjects.")
+        print(f"Data shape: {X_all.shape}")
+
+        # 2. Pre-Transformation Strategy: Transform all data into feature space ONCE.
+        # This prevents re-calculating convolutions 65 times.
+        model_params = self.config.get('model', {}).get('params', {})
+        num_models = model_params.get('num_models', 10)
+        num_kernels = model_params.get('num_kernels', 10000)
+
+        print(f"\nInitializing {num_models} Detach-Rocket transformers (Target: {num_kernels} kernels each)...")
+        from detach_rocket.detach_classes import PytorchMiniRocketMultivariate, DetachMatrix
+        import torch
+
+        transformers = []
+        feature_matrices = []
+
+        # Determine device
+        device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+        # Generating features for each model in the ensemble
+        for m in range(num_models):
+            print(f"Creating Feature Matrix for Model {m+1}/{num_models}...")
+            # Initialize PytorchMiniRocket transformer
+            transformer = PytorchMiniRocketMultivariate(num_features=num_kernels, device=device)
+            # fit on subset to determine biases
+            transformer.fit(X_all) 
+            # transform the entire dataset
+            F = transformer.transform(X_all).numpy()
+            
+            transformers.append(transformer)
+            feature_matrices.append(F)
+
+        # 3. Start LOSO loop using the pre-calculated features.
+        print("\nStarting Optimized LOSO Cross-Validation Loop...")
         subject_predictions = []
         subject_true_labels = []
-        
         results = []
 
+        # Helper to map subject IDs to indices
+        sub_to_idx = {sub_id: i for i, sub_id in enumerate(all_subjects)}
+
         for i, split in enumerate(self.splits):
-            print(f"\n--- Fold {i+1}/{len(self.splits)} (Testing subject: {split['test_subjects'][0]}) ---")
+            test_sub_id = split['test_subjects'][0]
+            print(f"\n--- Fold {i+1}/{len(self.splits)} (Testing: {test_sub_id}) ---")
             
-            # Load and format data for this split
-            max_trials = self.config.get('experiment', {}).get('max_trials_per_subject')
-            X_train, y_train, _ = load_and_format_data(self.df, split['train_subjects'], max_trials_per_subject=max_trials)
-            X_test, y_test, _ = load_and_format_data(self.df, split['test_subjects'], max_trials_per_subject=max_trials)
+            # Find indices for train and test trials based on subject IDs
+            test_sub_idx_in_all = sub_to_idx[test_sub_id]
+            train_mask = s_indices != test_sub_idx_in_all
+            test_mask = s_indices == test_sub_idx_in_all
             
-            if X_train.size == 0 or X_test.size == 0:
-                print(f"Skip Fold {i+1}: Insufficient data.")
-                continue
+            y_train = y_all[train_mask]
+            y_test = y_all[test_mask]
 
-            print(f"Train Trials: {X_train.shape[0]}, Test Trials: {X_test.shape[0]}")
+            # Collect model votes (Ensemble)
+            model_outputs = []
+            model_weights = []
 
-            # Initialize and train DetachEnsemble
-            model_params = self.config.get('model', {}).get('params', {})
-            model = DetachEnsemble(
-                num_kernels=model_params.get('num_kernels', 10000),
-                num_models=model_params.get('num_models', 10)
-            )
+            for m in range(num_models):
+                F_train = feature_matrices[m][train_mask]
+                F_test = feature_matrices[m][test_mask]
+
+                # Initialize DetachMatrix (Pruning + Classifier)
+                model = DetachMatrix(
+                    trade_off=self.config.get('experiment', {}).get('trade_off', 0.1)
+                )
+                model.fit(F_train, y_train)
+                
+                # Predict on test subject's trials
+                y_pred_m = model.predict(F_test)
+                model_outputs.append(y_pred_m)
+                model_weights.append(model._acc_train)
+
+            # 4. Ensemble Voting (Weighted by training accuracy)
+            # (n_trials, n_models)
+            model_outputs = np.array(model_outputs).T 
+            weights = np.array(model_weights)
             
-            model.fit(X_train, y_train)
-            
-            # Prediction on trials
-            y_pred_trials = model.predict(X_test)
-            
+            # For each trial, take the weighted average
+            y_pred_probas = (model_outputs * weights).sum(axis=1) / weights.sum()
+            y_pred_trials = (y_pred_probas >= 0.5).astype(int)
+
             # Subject-level prediction via Majority Voting
-            # (Since there is only one subject in X_test, we take the mode of y_pred_trials)
             y_pred_subject = 1 if np.mean(y_pred_trials) >= 0.5 else 0
-            y_true_subject = y_test[0] # All trials for this subject have same label
+            y_true_subject = y_test[0]
             
             subject_predictions.append(y_pred_subject)
             subject_true_labels.append(y_true_subject)
             
             results.append({
-                "subject": split['test_subjects'][0],
+                "subject": test_sub_id,
                 "y_true": int(y_true_subject),
                 "y_pred": int(y_pred_subject),
                 "trial_accuracy": float(accuracy_score(y_test, y_pred_trials))
@@ -144,13 +224,13 @@ class TaskEEGPipeline:
 
             print(f"Subject Prediction: {y_pred_subject} (True: {y_true_subject})")
 
+        # 5. Save Final Results
         if subject_predictions:
             final_acc = accuracy_score(subject_true_labels, subject_predictions)
             print(f"\nFinal Subject-Level Accuracy (LOSO): {final_acc*100:.2f}%")
             print("\nClassification Report:")
             print(classification_report(subject_true_labels, subject_predictions, target_names=['Control', 'AD']))
             
-            # Save results to file
             os.makedirs("results", exist_ok=True)
             with open("results/loso_results.json", "w") as f:
                 json.dump({
