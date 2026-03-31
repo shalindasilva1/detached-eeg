@@ -1,0 +1,145 @@
+import json
+import codecs
+
+cells = [
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "# Detached EEG Pipeline on Google Colab\n",
+            "\n",
+            "This notebook is specifically configured to run the `pipeline.py` on Google Colab with GPU acceleration. It assumes you have uploaded this repository (`detached-eeg`) to your Google Drive."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "outputs": [],
+        "source": [
+            "# 1. Mount Google Drive\n",
+            "from google.colab import drive\n",
+            "drive.mount('/content/drive')\n",
+            "\n",
+            "# 2. Navigate to the repository directory\n",
+            "# Change this path to where you uploaded the 'detached-eeg' folder in your Drive\n",
+            "import os\n",
+            "\n",
+            "# Example:\n",
+            "# os.chdir('/content/drive/MyDrive/repo/detached-eeg')\n",
+            "os.chdir('/content/drive/MyDrive/detached-eeg')\n",
+            "print(\"Current working directory:\", os.getcwd())"
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "outputs": [],
+        "source": [
+            "# 3. Install required dependencies\n",
+            "# Note: Colab already has many packages like torch, numpy, pandas pre-installed.\n",
+            "!pip install mne pyyaml eegdash pyts sktime==0.30.0\n",
+            "!pip install git+https://github.com/gon-uri/detach_rocket"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## Option A: Run the Pipeline Script directly\n",
+            "You can run the entire pipeline exactly as it is in `src/pipeline.py` using the Colab GPU."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "outputs": [],
+        "source": [
+            "!python src/pipeline.py"
+        ]
+    },
+    {
+        "cell_type": "markdown",
+        "metadata": {},
+        "source": [
+            "## Option B: Run Pipeline code interactively\n",
+            "Alternatively, run it inline so you can inspect variables, features matrices, and memory usage directly in Colab."
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "outputs": [],
+        "source": [
+            "import mne\n",
+            "import numpy as np\n",
+            "import json\n",
+            "import os\n",
+            "from typing import Dict, Any, List\n",
+            "from sklearn.metrics import accuracy_score, classification_report\n",
+            "import torch\n",
+            "\n",
+            "from src.utl.config import load_config\n",
+            "from src.utl.bids import load_bids_dataset\n",
+            "from src.utl.splits import get_stratified_splits\n",
+            "from src.utl.eeg import load_and_format_data\n",
+            "\n",
+            "try:\n",
+            "    from detach_rocket.detach_classes import DetachEnsemble\n",
+            "except ImportError:\n",
+            "    try:\n",
+            "        from detach_rocket.detach_rocket import DetachEnsemble\n",
+            "    except ImportError:\n",
+            "        print(\"Warning: detach_rocket not installed correctly.\")\n",
+            "        DetachEnsemble = None\n",
+            "\n",
+            "mne.set_log_level(\"WARNING\")\n",
+            "\n",
+            "print(\"CUDA Available:\", torch.cuda.is_available())\n",
+            "if torch.cuda.is_available():\n",
+            "    print(\"GPU:\", torch.cuda.get_device_name(0))"
+        ]
+    },
+    {
+        "cell_type": "code",
+        "execution_count": None,
+        "metadata": {},
+        "outputs": [],
+        "source": [
+            "from src.pipeline import TaskEEGPipeline\n",
+            "\n",
+            "# Initialize and Run\n",
+            "# This will use the config from config.yml. Make sure to update config.yml\n",
+            "# if you want to switch between ds004504 and ds006036.\n",
+            "pipeline = TaskEEGPipeline()\n",
+            "pipeline.run()"
+        ]
+    }
+]
+
+notebook = {
+    "cells": cells,
+    "metadata": {
+        "accelerator": "GPU",
+        "colab": {
+            "name": "colab_pipeline.ipynb",
+            "provenance": []
+        },
+        "kernelspec": {
+            "display_name": "Python 3",
+            "name": "python3"
+        },
+        "language_info": {
+            "name": "python"
+        }
+    },
+    "nbformat": 4,
+    "nbformat_minor": 4
+}
+
+with codecs.open("c:/Users/ShalindaSilva/repo/detached-eeg/notebooks/colab_pipeline.ipynb", "w", encoding="utf-8") as f:
+    json.dump(notebook, f, indent=1)
+print("Created notebooks/colab_pipeline.ipynb")
