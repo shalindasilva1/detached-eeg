@@ -84,6 +84,13 @@ def load_bids_dataset(dataset_path: str) -> Tuple[pd.DataFrame, Tuple[List[str],
     # Merge participant metadata from participants.tsv
 
     participants_tsv = dataset_dir / "participants.tsv"
+    if not participants_tsv.exists() and "processed" in dataset_dir.parts:
+        # Fallback to the raw directory for participants.tsv
+        raw_dataset_dir = Path(*(part if part != "processed" else "raw" for part in dataset_dir.parts))
+        fallback_tsv = raw_dataset_dir / "participants.tsv"
+        if fallback_tsv.exists():
+            participants_tsv = fallback_tsv
+
     if participants_tsv.exists() and not df.empty:
         participants_df = pd.read_csv(participants_tsv, sep="\t", encoding="utf-8-sig")
         participants_df.columns = [c.strip() for c in participants_df.columns]

@@ -39,10 +39,12 @@ class TaskEEGPipeline:
     """
     def __init__(self, config_path: str = "config.yml"):
         self.config = load_config(config_path)
-        self.resting_path = self.config['data']['resting']
         
         # Load experiment settings
         exp_config = self.config.get('experiment', {})
+        dataset_key = exp_config.get('dataset', 'resting')
+        self.data_path = self.config['data'].get(dataset_key, self.config['data']['resting'])
+
         self.split_seed = exp_config.get('seed', 42)
         self.n_splits = exp_config.get('n_splits', 5)
         self.binary_mode = exp_config.get('binary_classification', True)
@@ -77,8 +79,8 @@ class TaskEEGPipeline:
 
     def initialize(self):
         """Discover files and prepare splits."""
-        print(f"Initializing pipeline with data at: {self.resting_path}")
-        self.df, (controls, ad, ftd) = load_bids_dataset(self.resting_path)
+        print(f"Initializing pipeline with data at: {self.data_path}")
+        self.df, (controls, ad, ftd) = load_bids_dataset(self.data_path)
         
         if self.df is not None and self.df.empty:
             print("No data found. Check your config.yml paths.")

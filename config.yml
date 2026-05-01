@@ -1,8 +1,9 @@
 data:
   resting: ./data/raw/ds004504
-  photic: ./data/raw/ds006036
+  photic: ./data/processed/ds006036
 
 experiment:
+  dataset: "photic"
   binary_classification: true
   n_splits: 5
   seed: 42
