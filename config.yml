@@ -1,6 +1,7 @@
 data:
   resting: ./data/raw/ds004504
   photic: ./data/processed/ds006036
+  joint: ./data/processed/joint_dataset/joint_trials.npz
 
 experiment:
   dataset: "photic"
@@ -11,5 +12,5 @@ experiment:
 model:
   type: "detach_rocket"
   params:
-    num_kernels: 10000
-    num_models: 10
+    num_kernels: 100
+    num_models: 5
