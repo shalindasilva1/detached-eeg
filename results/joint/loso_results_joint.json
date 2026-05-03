@@ -1,0 +1,416 @@
+[
+    {
+        "config": {
+            "data": {
+                "resting": "./data/raw/ds004504",
+                "photic": "./data/processed/ds006036"
+            },
+            "experiment": {
+                "dataset": "photic",
+                "binary_classification": true,
+                "n_splits": 5,
+                "seed": 42
+            },
+            "model": {
+                "type": "detach_rocket",
+                "params": {
+                    "num_kernels": 1000,
+                    "num_models": 10
+                }
+            }
+        },
+        "subject_level_accuracy": 0.9076923076923077,
+        "folds": [
+            {
+                "subject": "sub-050",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.6622222222222223
+            },
+            {
+                "subject": "sub-048",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.937037037037037
+            },
+            {
+                "subject": "sub-059",
+                "y_true": 0,
+                "y_pred": 1,
+                "trial_accuracy": 0.3037383177570093
+            },
+            {
+                "subject": "sub-056",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.6172839506172839
+            },
+            {
+                "subject": "sub-040",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.73568281938326
+            },
+            {
+                "subject": "sub-051",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.891213389121339
+            },
+            {
+                "subject": "sub-042",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.9227467811158798
+            },
+            {
+                "subject": "sub-039",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.7459016393442623
+            },
+            {
+                "subject": "sub-045",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.6260162601626016
+            },
+            {
+                "subject": "sub-049",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.991701244813278
+            },
+            {
+                "subject": "sub-058",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.7715736040609137
+            },
+            {
+                "subject": "sub-064",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.7389558232931727
+            },
+            {
+                "subject": "sub-037",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.6515151515151515
+            },
+            {
+                "subject": "sub-057",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.9779735682819384
+            },
+            {
+                "subject": "sub-052",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.7627118644067796
+            },
+            {
+                "subject": "sub-063",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.7053941908713693
+            },
+            {
+                "subject": "sub-065",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.6009389671361502
+            },
+            {
+                "subject": "sub-038",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.7661290322580645
+            },
+            {
+                "subject": "sub-060",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.9017094017094017
+            },
+            {
+                "subject": "sub-043",
+                "y_true": 0,
+                "y_pred": 1,
+                "trial_accuracy": 0.3288888888888889
+            },
+            {
+                "subject": "sub-054",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.8385826771653543
+            },
+            {
+                "subject": "sub-041",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.963265306122449
+            },
+            {
+                "subject": "sub-055",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.7276595744680852
+            },
+            {
+                "subject": "sub-061",
+                "y_true": 0,
+                "y_pred": 1,
+                "trial_accuracy": 0.31223628691983124
+            },
+            {
+                "subject": "sub-044",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.8131868131868132
+            },
+            {
+                "subject": "sub-046",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.6235294117647059
+            },
+            {
+                "subject": "sub-047",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.6707317073170732
+            },
+            {
+                "subject": "sub-053",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.665158371040724
+            },
+            {
+                "subject": "sub-062",
+                "y_true": 0,
+                "y_pred": 0,
+                "trial_accuracy": 0.6852589641434262
+            },
+            {
+                "subject": "sub-002",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.8212765957446808
+            },
+            {
+                "subject": "sub-035",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.8917748917748918
+            },
+            {
+                "subject": "sub-028",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.7436974789915967
+            },
+            {
+                "subject": "sub-030",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.9140625
+            },
+            {
+                "subject": "sub-032",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.7976878612716763
+            },
+            {
+                "subject": "sub-009",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.9507389162561576
+            },
+            {
+                "subject": "sub-008",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.9273504273504274
+            },
+            {
+                "subject": "sub-031",
+                "y_true": 1,
+                "y_pred": 0,
+                "trial_accuracy": 0.3346938775510204
+            },
+            {
+                "subject": "sub-014",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.6491228070175439
+            },
+            {
+                "subject": "sub-006",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.5369458128078818
+            },
+            {
+                "subject": "sub-034",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.8942307692307693
+            },
+            {
+                "subject": "sub-019",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.9510204081632653
+            },
+            {
+                "subject": "sub-027",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.9890710382513661
+            },
+            {
+                "subject": "sub-012",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.757201646090535
+            },
+            {
+                "subject": "sub-033",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.95
+            },
+            {
+                "subject": "sub-005",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.8348623853211009
+            },
+            {
+                "subject": "sub-007",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.9957983193277311
+            },
+            {
+                "subject": "sub-024",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 1.0
+            },
+            {
+                "subject": "sub-017",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.9800796812749004
+            },
+            {
+                "subject": "sub-021",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.5258215962441315
+            },
+            {
+                "subject": "sub-022",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.9906976744186047
+            },
+            {
+                "subject": "sub-025",
+                "y_true": 1,
+                "y_pred": 0,
+                "trial_accuracy": 0.35294117647058826
+            },
+            {
+                "subject": "sub-018",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.9087136929460581
+            },
+            {
+                "subject": "sub-011",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.5497630331753555
+            },
+            {
+                "subject": "sub-013",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.9343629343629344
+            },
+            {
+                "subject": "sub-001",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.9162011173184358
+            },
+            {
+                "subject": "sub-026",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.9489795918367347
+            },
+            {
+                "subject": "sub-010",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.7047619047619048
+            },
+            {
+                "subject": "sub-023",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.8166666666666667
+            },
+            {
+                "subject": "sub-029",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.9757575757575757
+            },
+            {
+                "subject": "sub-004",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.8509615384615384
+            },
+            {
+                "subject": "sub-016",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.9928057553956835
+            },
+            {
+                "subject": "sub-036",
+                "y_true": 1,
+                "y_pred": 0,
+                "trial_accuracy": 0.3114754098360656
+            },
+            {
+                "subject": "sub-003",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.9739130434782609
+            },
+            {
+                "subject": "sub-015",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.6694915254237288
+            },
+            {
+                "subject": "sub-020",
+                "y_true": 1,
+                "y_pred": 1,
+                "trial_accuracy": 0.8152610441767069
+            }
+        ]
+    }
+]
